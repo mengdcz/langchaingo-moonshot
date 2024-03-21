@@ -98,7 +98,8 @@ type StreamedChatResponsePayload struct {
 			Content      string        `json:"content,omitempty"`
 			FunctionCall *FunctionCall `json:"function_call,omitempty"`
 		} `json:"delta,omitempty"`
-		FinishReason string `json:"finish_reason,omitempty"`
+		FinishReason string    `json:"finish_reason,omitempty"`
+		Usage        ChatUsage `json:"usage,omitempty"`
 	} `json:"choices,omitempty"`
 }
 
@@ -164,8 +165,8 @@ func (c *Client) createChat(ctx context.Context, payload *ChatRequest) (*ChatRes
 	//resBody, err := io.ReadAll(r.Body)
 	//fmt.Println(string(resBody))
 	if err != nil {
-		fmt.Println("openai http error:", err.Error())
-		return nil, fmt.Errorf("%s", "openai http error:"+err.Error())
+		fmt.Println("moonshot http error:", err.Error())
+		return nil, fmt.Errorf("%s", "moonshot http error:"+err.Error())
 	}
 	if r.StatusCode != http.StatusOK {
 		msg := fmt.Sprintf("API returned unexpected status code: %d", r.StatusCode)
@@ -209,6 +210,8 @@ func parseStreamingChatResponse(ctx context.Context, r *http.Response, payload *
 			if err != nil {
 				log.Fatalf("failed to decode stream payload: %v", err)
 			}
+			fmt.Println("streamPayload", streamPayload)
+
 			responseChan <- streamPayload
 		}
 		if err := scanner.Err(); err != nil {
@@ -227,6 +230,11 @@ func parseStreamingChatResponse(ctx context.Context, r *http.Response, payload *
 			continue
 		}
 		chunk := []byte(streamResponse.Choices[0].Delta.Content)
+
+		fmt.Println("streamPayload=====", streamResponse)
+
+		response.Usage = streamResponse.Choices[0].Usage
+
 		response.Choices[0].Message.Content += streamResponse.Choices[0].Delta.Content
 		if streamResponse.Choices[0].Delta.FunctionCall != nil {
 			if response.Choices[0].Message.FunctionCall == nil {

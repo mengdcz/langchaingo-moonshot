@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	goredis "github.com/redis/go-redis/v9"
+	"os"
+
 	// "github.com/redis/go-redis/v9"
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/ernie"
 	"github.com/tmc/langchaingo/schema"
 	"log"
-	"os"
 )
 
 func main() {

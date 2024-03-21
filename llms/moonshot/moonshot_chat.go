@@ -2,6 +2,7 @@ package moonshot
 
 import (
 	"context"
+	"fmt"
 	"github.com/tmc/langchaingo/callbacks"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/moonshot/internal/moonshotclient"
@@ -40,27 +41,36 @@ func NewChat(opts ...Option) (*Chat, error) {
 
 // Call requests a chat response for the given messages.
 func (o *Chat) Call(ctx context.Context, messages []schema.ChatMessage, options ...llms.CallOption) (*schema.AIChatMessage, error) { // nolint: lll
+	fmt.Println("===1==")
+
 	r, err := o.Generate(ctx, [][]schema.ChatMessage{messages}, options...)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("===2==")
+
 	if len(r) == 0 {
 		return nil, ErrEmptyResponse
 	}
+	fmt.Println("===3==")
 	return r[0].Message, nil
 }
 
 //nolint:funlen
 func (o *Chat) Generate(ctx context.Context, messageSets [][]schema.ChatMessage, options ...llms.CallOption) ([]*llms.Generation, error) { // nolint:lll,cyclop
 	o.ResetUsage()
+	fmt.Println(1000)
 	if o.CallbacksHandler != nil {
 		o.CallbacksHandler.HandleLLMStart(ctx, getPromptsFromMessageSets(messageSets))
 	}
+	fmt.Println(1001)
 
 	opts := llms.CallOptions{}
 	for _, opt := range options {
 		opt(&opts)
 	}
+	fmt.Println(1003)
+
 	generations := make([]*llms.Generation, 0, len(messageSets))
 	for _, messageSet := range messageSets {
 		req := &moonshotclient.ChatRequest{
@@ -76,6 +86,8 @@ func (o *Chat) Generate(ctx context.Context, messageSets [][]schema.ChatMessage,
 
 			FunctionCallBehavior: moonshotclient.FunctionCallBehavior(opts.FunctionCallBehavior),
 		}
+		fmt.Println(1003001)
+
 		for _, fn := range opts.Functions {
 			req.Functions = append(req.Functions, moonshotclient.FunctionDefinition{
 				Name:        fn.Name,
@@ -83,6 +95,8 @@ func (o *Chat) Generate(ctx context.Context, messageSets [][]schema.ChatMessage,
 				Parameters:  fn.Parameters,
 			})
 		}
+		fmt.Println(1003002)
+
 		result, err := o.client.CreateChat(ctx, req)
 		if err != nil {
 			return nil, err
@@ -90,10 +104,17 @@ func (o *Chat) Generate(ctx context.Context, messageSets [][]schema.ChatMessage,
 		if len(result.Choices) == 0 {
 			return nil, ErrEmptyResponse
 		}
+		fmt.Println(1003003)
+
 		generationInfo := make(map[string]any, reflect.ValueOf(result.Usage).NumField())
 		generationInfo["CompletionTokens"] = result.Usage.CompletionTokens
 		generationInfo["PromptTokens"] = result.Usage.PromptTokens
 		generationInfo["TotalTokens"] = result.Usage.TotalTokens
+
+		fmt.Println("CompletionTokens", result.Usage.CompletionTokens)
+		fmt.Println("PromptTokens", result.Usage.PromptTokens)
+		fmt.Println("TotalTokens", result.Usage.TotalTokens)
+
 		msg := &schema.AIChatMessage{
 			Content: result.Choices[0].Message.Content,
 		}
@@ -108,26 +129,23 @@ func (o *Chat) Generate(ctx context.Context, messageSets [][]schema.ChatMessage,
 			Text:           msg.Content,
 			GenerationInfo: generationInfo,
 		})
-
-		PromptTokens := o.countMessageTokens(messageSet)
-		CompletionTokens := o.GetNumTokens(msg.Content)
-		TotalTokens := PromptTokens + CompletionTokens
+		PromptTokens := result.Usage.PromptTokens         //o.countMessageTokens(messageSet)
+		CompletionTokens := result.Usage.CompletionTokens //o.GetNumTokens(msg.Content)
+		TotalTokens := result.Usage.TotalTokens           // PromptTokens + CompletionTokens
 		o.usage = append(o.usage, Usage{
 			PromptTokens:     PromptTokens,
 			CompletionTokens: CompletionTokens,
 			TotalTokens:      TotalTokens,
 		})
 	}
-
 	if o.CallbacksHandler != nil {
 		o.CallbacksHandler.HandleLLMEnd(ctx, llms.LLMResult{Generations: [][]*llms.Generation{generations}})
 	}
-
 	return generations, nil
 }
 
 func (o *Chat) GetNumTokens(text string) int {
-	return llms.CountTokens(o.client.Model, text)
+	return 0 // llms.CountTokens(o.client.Model, text)
 }
 
 func (o *Chat) ResetUsage() {

@@ -167,6 +167,7 @@ func (c *Client) setHeaders(req *http.Request) {
 }
 
 func (c *Client) buildURL(suffix string, model string) string {
+	fmt.Println("buildURL", suffix, model)
 	if IsAzure(c.apiType) {
 		return c.buildAzureURL(suffix, model)
 	}
