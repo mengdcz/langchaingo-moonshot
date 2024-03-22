@@ -150,6 +150,7 @@ func (c *Client) createChat(ctx context.Context, payload *ChatRequest) (*ChatRes
 	// Send request
 	r, err := c.httpClient.Do(req)
 	if err != nil {
+		fmt.Println("moonshot http error:", err.Error())
 		return nil, err
 	}
 	defer r.Body.Close()
@@ -164,7 +165,7 @@ func (c *Client) createChat(ctx context.Context, payload *ChatRequest) (*ChatRes
 		errMsg := getErrMsg(r.StatusCode)
 		msg := fmt.Sprintf(" Msg %v, status code: %d ", errMsg.Error(), r.StatusCode)
 		//msg := fmt.Sprintf("API returned unexpected status code: %d", r.StatusCode)
-		fmt.Println(" errMsg.Error", msg)
+
 		// No need to check the error here: if it fails, we'll just return the
 		// status code.
 		var errResp errorMessage
@@ -204,7 +205,6 @@ func parseStreamingChatResponse(ctx context.Context, r *http.Response, payload *
 			if err != nil {
 				log.Fatalf("failed to decode stream payload: %v", err)
 			}
-			fmt.Println("streamPayload", streamPayload)
 
 			responseChan <- streamPayload
 		}
@@ -224,9 +224,6 @@ func parseStreamingChatResponse(ctx context.Context, r *http.Response, payload *
 			continue
 		}
 		chunk := []byte(streamResponse.Choices[0].Delta.Content)
-
-		fmt.Println("streamPayload=====", streamResponse)
-
 		response.Usage = streamResponse.Choices[0].Usage
 
 		response.Choices[0].Message.Content += streamResponse.Choices[0].Delta.Content
