@@ -20,30 +20,19 @@ var (
 // newClient is wrapper for moonshotclient internal package.
 func newClient(opts ...Option) (*moonshotclient.Client, error) {
 	options := &options{
-		token:        os.Getenv(tokenEnvVarName),
-		model:        os.Getenv(modelEnvVarName),
-		baseURL:      os.Getenv(baseURLEnvVarName),
-		organization: os.Getenv(organizationEnvVarName),
-		apiType:      APIType(moonshotclient.APITypeOpenAI),
-		httpClient:   http.DefaultClient,
+		token:      os.Getenv(tokenEnvVarName),
+		model:      os.Getenv(modelEnvVarName),
+		baseURL:    os.Getenv(baseURLEnvVarName),
+		httpClient: http.DefaultClient,
 	}
 
 	for _, opt := range opts {
 		opt(options)
 	}
 
-	// set of options needed for Azure client
-	//if moonshotclient.IsAzure(moonshotclient.APIType(options.apiType)) && options.apiVersion == "" {
-	//	options.apiVersion = DefaultAPIVersion
-	//	if options.embeddingModel == "" {
-	//		return nil, ErrMissingAzureEmbeddingModel
-	//	}
-	//}
-
 	if len(options.token) == 0 {
 		return nil, ErrMissingToken
 	}
 
-	return moonshotclient.New(options.token, options.model, options.baseURL, options.organization,
-		moonshotclient.APIType(options.apiType), options.apiVersion, options.httpClient, options.embeddingModel)
+	return moonshotclient.New(options.token, options.model, options.baseURL, options.httpClient)
 }

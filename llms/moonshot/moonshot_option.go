@@ -3,35 +3,20 @@ package moonshot
 import "github.com/tmc/langchaingo/llms/moonshot/internal/moonshotclient"
 
 const (
-	tokenEnvVarName        = "OPENAI_API_KEY"      //nolint:gosec
-	modelEnvVarName        = "OPENAI_MODEL"        //nolint:gosec
-	baseURLEnvVarName      = "OPENAI_BASE_URL"     //nolint:gosec
-	organizationEnvVarName = "OPENAI_ORGANIZATION" //nolint:gosec
-)
-
-type APIType moonshotclient.APIType
-
-const (
-	APITypeOpenAI  APIType = APIType(moonshotclient.APITypeOpenAI)
-	APITypeAzure           = APIType(moonshotclient.APITypeAzure)
-	APITypeAzureAD         = APIType(moonshotclient.APITypeAzureAD)
-)
-
-const (
-	DefaultAPIVersion = "2023-05-15"
+	tokenEnvVarName   = "OPENAI_API_KEY"  //nolint:gosec
+	modelEnvVarName   = "OPENAI_MODEL"    //nolint:gosec
+	baseURLEnvVarName = "OPENAI_BASE_URL" //nolint:gosec
 )
 
 type options struct {
-	token        string
-	model        string
-	baseURL      string
-	organization string
-	apiType      APIType
-	httpClient   moonshotclient.Doer
+	token      string
+	model      string
+	baseURL    string
+	httpClient moonshotclient.Doer
 
 	// required when APIType is APITypeAzure or APITypeAzureAD
-	apiVersion     string
-	embeddingModel string
+	//apiVersion     string
+	//embeddingModel string
 }
 
 type Option func(*options)
@@ -52,43 +37,12 @@ func WithModel(model string) Option {
 	}
 }
 
-// WithEmbeddingModel passes the OpenAI model to the client. Required when ApiType is Azure.
-func WithEmbeddingModel(embeddingModel string) Option {
-	return func(opts *options) {
-		opts.embeddingModel = embeddingModel
-	}
-}
-
 // WithBaseURL passes the OpenAI base url to the client. If not set, the base url
 // is read from the OPENAI_BASE_URL environment variable. If still not set in ENV
 // VAR OPENAI_BASE_URL, then the default value is https://api.openai.com/v1 is used.
 func WithBaseURL(baseURL string) Option {
 	return func(opts *options) {
 		opts.baseURL = baseURL
-	}
-}
-
-// WithOrganization passes the OpenAI organization to the client. If not set, the
-// organization is read from the OPENAI_ORGANIZATION.
-func WithOrganization(organization string) Option {
-	return func(opts *options) {
-		opts.organization = organization
-	}
-}
-
-// WithAPIType passes the api type to the client. If not set, the default value
-// is APITypeOpenAI.
-func WithAPIType(apiType APIType) Option {
-	return func(opts *options) {
-		opts.apiType = apiType
-	}
-}
-
-// WithAPIVersion passes the api version to the client. If not set, the default value
-// is DefaultAPIVersion.
-func WithAPIVersion(apiVersion string) Option {
-	return func(opts *options) {
-		opts.apiVersion = apiVersion
 	}
 }
 

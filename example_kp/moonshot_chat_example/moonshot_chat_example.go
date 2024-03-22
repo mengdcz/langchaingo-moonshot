@@ -14,7 +14,7 @@ func main() {
 	ctx := context.Background()
 
 	key := os.Getenv("MOONSHOT_API_KEY")
-	model := "moonshot-v1-8k"
+	model := "moonshot-v1-8k" // moonshot-v1-8k moonshot-v1-32k moonshot-v1-128k
 	llm, err := moonshot.NewChat(
 		moonshot.WithToken(key),
 		moonshot.WithModel(model),
@@ -25,11 +25,10 @@ func main() {
 	}
 	messages := []schema.ChatMessage{
 		schema.SystemChatMessage{Content: "你是 M助理，由 M AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一切涉及恐怖主义，种族歧视，黄色暴力等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。"},
-		schema.HumanChatMessage{Content: "介绍一下你自己"},
+		schema.HumanChatMessage{Content: "介绍一下你自己,提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一切涉及恐怖主义，种族歧视，黄色暴力等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言"},
 	}
 
 	temperature := 0.8
-	fmt.Println("=======")
 	completion, err := llm.Call(ctx,
 		messages,
 		llms.WithTemperature(temperature),
@@ -44,6 +43,9 @@ func main() {
 
 	fmt.Println("=================")
 	fmt.Printf("%#v", llm.GetUsage())
+	fmt.Println("=================")
 	fmt.Printf("%#v", completion)
+	// moonshot-v1-8k {PromptTokens:70, CompletionTokens:91, TotalTokens:161}}
+	// moonshot-v1-128k {PromptTokens:70, CompletionTokens:86, TotalTokens:156}}
 
 }

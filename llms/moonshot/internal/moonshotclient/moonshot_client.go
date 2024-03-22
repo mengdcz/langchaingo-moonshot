@@ -5,37 +5,21 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 const (
-	defaultBaseURL              = "https://api.moonshot.cn/v1" // /chat/completions
-	defaultFunctionCallBehavior = "auto"
+	defaultBaseURL = "https://api.moonshot.cn/v1" // /chat/completions
 )
 
 // ErrEmptyResponse is returned when the OpenAI API returns an empty response.
 var ErrEmptyResponse = errors.New("empty response")
 
-type APIType string
-
-const (
-	APITypeOpenAI  APIType = "OPEN_AI"
-	APITypeAzure   APIType = "AZURE"
-	APITypeAzureAD APIType = "AZURE_AD"
-)
-
 // Client is a client for the OpenAI API.
 type Client struct {
-	token        string
-	Model        string
-	baseURL      string
-	organization string
-	apiType      APIType
-	httpClient   Doer
-
-	// required when APIType is APITypeAzure or APITypeAzureAD
-	apiVersion      string
-	embeddingsModel string
+	token      string
+	Model      string
+	baseURL    string
+	httpClient Doer
 }
 
 // Option is an option for the OpenAI client.
@@ -47,19 +31,14 @@ type Doer interface {
 }
 
 // New returns a new OpenAI client.
-func New(token string, model string, baseURL string, organization string,
-	apiType APIType, apiVersion string, httpClient Doer, embeddingsModel string,
+func New(token string, model string, baseURL string, httpClient Doer,
 	opts ...Option,
 ) (*Client, error) {
 	c := &Client{
-		token:           token,
-		Model:           model,
-		embeddingsModel: embeddingsModel,
-		baseURL:         baseURL,
-		organization:    organization,
-		apiType:         apiType,
-		apiVersion:      apiVersion,
-		httpClient:      httpClient,
+		token:      token,
+		Model:      model,
+		baseURL:    baseURL,
+		httpClient: httpClient,
 	}
 
 	for _, opt := range opts {
@@ -102,32 +81,6 @@ type EmbeddingRequest struct {
 	Input []string `json:"input"`
 }
 
-// CreateEmbedding creates embeddings.
-func (c *Client) CreateEmbedding(ctx context.Context, r *EmbeddingRequest) ([][]float64, error) {
-	if r.Model == "" {
-		r.Model = defaultEmbeddingModel
-	}
-
-	resp, err := c.createEmbedding(ctx, &embeddingPayload{
-		Model: r.Model,
-		Input: r.Input,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if len(resp.Data) == 0 {
-		return nil, ErrEmptyResponse
-	}
-
-	embeddings := make([][]float64, 0)
-	for i := 0; i < len(resp.Data); i++ {
-		embeddings = append(embeddings, resp.Data[i].Embedding)
-	}
-
-	return embeddings, nil
-}
-
 // CreateChat creates chat request.
 func (c *Client) CreateChat(ctx context.Context, r *ChatRequest) (*ChatResponse, error) {
 	if r.Model == "" {
@@ -136,9 +89,6 @@ func (c *Client) CreateChat(ctx context.Context, r *ChatRequest) (*ChatResponse,
 		} else {
 			r.Model = c.Model
 		}
-	}
-	if r.FunctionCallBehavior == "" && len(r.Functions) > 0 {
-		r.FunctionCallBehavior = defaultFunctionCallBehavior
 	}
 	resp, err := c.createChat(ctx, r)
 	if err != nil {
@@ -150,39 +100,14 @@ func (c *Client) CreateChat(ctx context.Context, r *ChatRequest) (*ChatResponse,
 	return resp, nil
 }
 
-func IsAzure(apiType APIType) bool {
-	return apiType == APITypeAzure || apiType == APITypeAzureAD
-}
-
 func (c *Client) setHeaders(req *http.Request) {
 	req.Header.Set("Content-Type", "application/json")
-	if c.apiType == APITypeOpenAI || c.apiType == APITypeAzureAD {
-		req.Header.Set("Authorization", "Bearer "+c.token)
-	} else {
-		req.Header.Set("api-key", c.token)
-	}
-	if c.organization != "" {
-		req.Header.Set("OpenAI-Organization", c.organization)
-	}
+	req.Header.Set("Authorization", "Bearer "+c.token)
 }
 
 func (c *Client) buildURL(suffix string, model string) string {
 	fmt.Println("buildURL", suffix, model)
-	if IsAzure(c.apiType) {
-		return c.buildAzureURL(suffix, model)
-	}
 
 	// open ai implement:
 	return fmt.Sprintf("%s%s", c.baseURL, suffix)
-}
-
-func (c *Client) buildAzureURL(suffix string, model string) string {
-	baseURL := c.baseURL
-	baseURL = strings.TrimRight(baseURL, "/")
-
-	// azure example url:
-	// /openai/deployments/{model}/chat/completions?api-version={api_version}
-	return fmt.Sprintf("%s/openai/deployments/%s%s?api-version=%s",
-		baseURL, model, suffix, c.apiVersion,
-	)
 }

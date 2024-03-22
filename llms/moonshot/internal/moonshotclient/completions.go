@@ -6,15 +6,12 @@ import (
 
 // CompletionRequest is a request to complete a completion.
 type CompletionRequest struct {
-	Model            string   `json:"model"`
-	Prompt           string   `json:"prompt"`
-	Temperature      float64  `json:"temperature,omitempty"`
-	MaxTokens        int      `json:"max_tokens,omitempty"`
-	N                int      `json:"n,omitempty"`
-	FrequencyPenalty float64  `json:"frequency_penalty,omitempty"`
-	PresencePenalty  float64  `json:"presence_penalty,omitempty"`
-	TopP             float64  `json:"top_p,omitempty"`
-	StopWords        []string `json:"stop,omitempty"`
+	Model       string  `json:"model"`
+	Prompt      string  `json:"prompt"`
+	Temperature float64 `json:"temperature,omitempty"`
+	MaxTokens   int     `json:"max_tokens,omitempty"`
+	N           int     `json:"n,omitempty"`
+	TopP        float64 `json:"top_p,omitempty"`
 
 	// StreamingFunc is a function to be called for each chunk of a streaming response.
 	// Return an error to stop streaming early.
@@ -52,10 +49,6 @@ func (c *Client) setCompletionDefaults(payload *CompletionRequest) {
 		payload.MaxTokens = 256
 	}
 
-	if len(payload.StopWords) == 0 {
-		payload.StopWords = nil
-	}
-
 	switch {
 	// Prefer the model specified in the payload.
 	case payload.Model != "":
@@ -77,13 +70,10 @@ func (c *Client) createCompletion(ctx context.Context, payload *CompletionReques
 		Messages: []*ChatMessage{
 			{Role: "user", Content: payload.Prompt},
 		},
-		Temperature:      payload.Temperature,
-		TopP:             payload.TopP,
-		MaxTokens:        payload.MaxTokens,
-		N:                payload.N,
-		StopWords:        payload.StopWords,
-		FrequencyPenalty: payload.FrequencyPenalty,
-		PresencePenalty:  payload.PresencePenalty,
-		StreamingFunc:    payload.StreamingFunc,
+		Temperature:   payload.Temperature,
+		TopP:          payload.TopP,
+		MaxTokens:     payload.MaxTokens,
+		N:             payload.N,
+		StreamingFunc: payload.StreamingFunc,
 	})
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/moonshot/internal/moonshotclient"
 	"github.com/tmc/langchaingo/schema"
-	"strings"
 )
 
 type LLM struct {
@@ -44,9 +43,9 @@ func (o *LLM) Call(ctx context.Context, prompt string, options ...llms.CallOptio
 
 func (o *LLM) Generate(ctx context.Context, prompts []string, options ...llms.CallOption) ([]*llms.Generation, error) {
 	o.ResetUsage()
-	if o.CallbacksHandler != nil {
-		o.CallbacksHandler.HandleLLMStart(ctx, prompts)
-	}
+	//if o.CallbacksHandler != nil {
+	//	o.CallbacksHandler.HandleLLMStart(ctx, prompts)
+	//}
 
 	opts := llms.CallOptions{}
 	for _, opt := range options {
@@ -56,16 +55,13 @@ func (o *LLM) Generate(ctx context.Context, prompts []string, options ...llms.Ca
 	generations := make([]*llms.Generation, 0, len(prompts))
 	for _, prompt := range prompts {
 		result, err := o.client.CreateCompletion(ctx, &moonshotclient.CompletionRequest{
-			Model:            opts.Model,
-			Prompt:           prompt,
-			MaxTokens:        opts.MaxTokens,
-			StopWords:        opts.StopWords,
-			Temperature:      opts.Temperature,
-			N:                opts.N,
-			FrequencyPenalty: opts.FrequencyPenalty,
-			PresencePenalty:  opts.PresencePenalty,
-			TopP:             opts.TopP,
-			StreamingFunc:    opts.StreamingFunc,
+			Model:         opts.Model,
+			Prompt:        prompt,
+			MaxTokens:     opts.MaxTokens,
+			Temperature:   opts.Temperature,
+			N:             opts.N,
+			TopP:          opts.TopP,
+			StreamingFunc: opts.StreamingFunc,
 		})
 		if err != nil {
 			return nil, err
@@ -104,30 +100,4 @@ func (o *LLM) ResetUsage() {
 
 func (o *LLM) GetUsage() []Usage {
 	return o.usage
-}
-
-// CreateEmbedding creates embeddings for the given input texts.
-func (o *LLM) CreateEmbedding(ctx context.Context, inputTexts []string) ([][]float64, error) {
-	o.ResetUsage()
-	embeddings, err := o.client.CreateEmbedding(ctx, &moonshotclient.EmbeddingRequest{
-		Input: inputTexts,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(embeddings) == 0 {
-		return nil, ErrEmptyResponse
-	}
-	if len(inputTexts) != len(embeddings) {
-		return embeddings, ErrUnexpectedResponseLength
-	}
-	total := o.GetNumTokens(strings.Join(inputTexts, ""))
-	o.usage = []moonshotclient.ChatUsage{
-		{
-			PromptTokens:     total,
-			CompletionTokens: 0,
-			TotalTokens:      total,
-		},
-	}
-	return embeddings, nil
 }

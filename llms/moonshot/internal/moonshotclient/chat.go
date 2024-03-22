@@ -18,16 +18,13 @@ const (
 
 // ChatRequest is a request to complete a chat completion..
 type ChatRequest struct {
-	Model            string         `json:"model"`
-	Messages         []*ChatMessage `json:"messages"`
-	Temperature      float64        `json:"temperature,omitempty"`
-	TopP             float64        `json:"top_p,omitempty"`
-	MaxTokens        int            `json:"max_tokens,omitempty"`
-	N                int            `json:"n,omitempty"`
-	StopWords        []string       `json:"stop,omitempty"`
-	Stream           bool           `json:"stream,omitempty"`
-	FrequencyPenalty float64        `json:"frequency_penalty,omitempty"`
-	PresencePenalty  float64        `json:"presence_penalty,omitempty"`
+	Model       string         `json:"model"`
+	Messages    []*ChatMessage `json:"messages"`
+	Temperature float64        `json:"temperature,omitempty"`
+	TopP        float64        `json:"top_p,omitempty"`
+	MaxTokens   int            `json:"max_tokens,omitempty"`
+	N           int            `json:"n,omitempty"`
+	Stream      bool           `json:"stream,omitempty"`
 
 	// Function definitions to include in the request.
 	Functions []FunctionDefinition `json:"functions,omitempty"`
@@ -77,12 +74,7 @@ type ChatResponse struct {
 	Choices []*ChatChoice `json:"choices,omitempty"`
 	Model   string        `json:"model,omitempty"`
 	Object  string        `json:"object,omitempty"`
-	//Usage   struct {
-	//	CompletionTokens float64 `json:"completion_tokens,omitempty"`
-	//	PromptTokens     float64 `json:"prompt_tokens,omitempty"`
-	//	TotalTokens      float64 `json:"total_tokens,omitempty"`
-	//} `json:"usage,omitempty"`
-	Usage ChatUsage `json:"usage,omitempty"`
+	Usage   ChatUsage     `json:"usage,omitempty"`
 }
 
 // StreamedChatResponsePayload is a chunk from the stream.
@@ -169,8 +161,10 @@ func (c *Client) createChat(ctx context.Context, payload *ChatRequest) (*ChatRes
 		return nil, fmt.Errorf("%s", "moonshot http error:"+err.Error())
 	}
 	if r.StatusCode != http.StatusOK {
-		msg := fmt.Sprintf("API returned unexpected status code: %d", r.StatusCode)
-
+		errMsg := getErrMsg(r.StatusCode)
+		msg := fmt.Sprintf(" Msg %v, status code: %d ", errMsg.Error(), r.StatusCode)
+		//msg := fmt.Sprintf("API returned unexpected status code: %d", r.StatusCode)
+		fmt.Println(" errMsg.Error", msg)
 		// No need to check the error here: if it fails, we'll just return the
 		// status code.
 		var errResp errorMessage
@@ -253,4 +247,21 @@ func parseStreamingChatResponse(ctx context.Context, r *http.Response, payload *
 		}
 	}
 	return &response, nil
+}
+
+func getErrMsg(httpStatus int) error {
+	fmt.Printf("getErrMsg httpStatus %v \n", httpStatus)
+	var err error
+	switch httpStatus {
+	case http.StatusBadRequest:
+		err = errors.New("参数格式有误")
+	case http.StatusUnauthorized:
+		err = errors.New("鉴权失败请确认")
+	case http.StatusTooManyRequests:
+		err = errors.New("您超速了，请稍后重试")
+	default:
+		err = errors.New("unknown error")
+	}
+
+	return err
 }
