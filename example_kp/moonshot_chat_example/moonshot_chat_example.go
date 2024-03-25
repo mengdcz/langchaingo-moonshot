@@ -26,6 +26,8 @@ func main() {
 	messages := []schema.ChatMessage{
 		schema.SystemChatMessage{Content: "你是 M助理，由 M AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一切涉及恐怖主义，种族歧视，黄色暴力等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。"},
 		schema.HumanChatMessage{Content: "介绍一下你自己,提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一切涉及恐怖主义，种族歧视，黄色暴力等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言"},
+		schema.AIChatMessage{Content: "OK"},
+		schema.HumanChatMessage{Content: "介绍一下你自己,提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一切涉及恐怖主义，种族歧视，黄色暴力等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言"},
 	}
 
 	temperature := 0.8

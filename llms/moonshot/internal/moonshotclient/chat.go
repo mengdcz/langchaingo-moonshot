@@ -162,8 +162,10 @@ func (c *Client) createChat(ctx context.Context, payload *ChatRequest) (*ChatRes
 		return nil, fmt.Errorf("%s", "moonshot http error:"+err.Error())
 	}
 	if r.StatusCode != http.StatusOK {
+		log.Printf("moonshot r.StatusCode: %v, r.Status \n", r.StatusCode, r.Status)
+
 		errMsg := getErrMsg(r.StatusCode)
-		msg := fmt.Sprintf(" Msg %v, status code: %d ", errMsg.Error(), r.StatusCode)
+		msg := fmt.Sprintf(" %v", errMsg.Error())
 		//msg := fmt.Sprintf("API returned unexpected status code: %d", r.StatusCode)
 
 		// No need to check the error here: if it fails, we'll just return the
@@ -172,8 +174,9 @@ func (c *Client) createChat(ctx context.Context, payload *ChatRequest) (*ChatRes
 		if err := json.NewDecoder(r.Body).Decode(&errResp); err != nil {
 			return nil, errors.New(msg) // nolint:goerr113
 		}
+		log.Printf("moonshot errResp.Error.Message: %v \n", errResp.Error.Message)
 
-		return nil, fmt.Errorf("%s: %s", msg, errResp.Error.Message) // nolint:goerr113
+		return nil, fmt.Errorf("%s", msg) // nolint:goerr113 errResp.Error.Message max request per minute reached: 5, please try again after 1 seconds
 	}
 	if payload.StreamingFunc != nil {
 		return parseStreamingChatResponse(ctx, r, payload)
@@ -255,7 +258,7 @@ func getErrMsg(httpStatus int) error {
 	case http.StatusUnauthorized:
 		err = errors.New("鉴权失败请确认")
 	case http.StatusTooManyRequests:
-		err = errors.New("您超速了，请稍后重试")
+		err = errors.New("操作频繁，请稍后重试")
 	default:
 		err = errors.New("unknown error")
 	}
